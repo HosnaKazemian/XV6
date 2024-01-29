@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
     printf(1, "Counter initially: %d\n", counter);
 
     thread_create(thread_func, &counter, 0);
+   
     thread_join();
 
     printf(1, "Counter after thread: %d\n", counter);

@@ -1,6 +1,6 @@
 #include "syscall.h"
 #include "traps.h"
-
+ //trap baraye system call  ke az user mode bere kernel mode
 #define SYSCALL(name) \
   .globl name; \
   name: \

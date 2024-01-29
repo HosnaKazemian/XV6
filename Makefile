@@ -181,6 +181,7 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_test_threads\
+	_test_locks\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -254,6 +255,7 @@ EXTRA=\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
 	test_threads.c\
+	test_locks.c\
 
 dist:
 	rm -rf dist
