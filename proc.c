@@ -532,3 +532,68 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+
+
+int 
+clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
+{
+  struct proc *new_proc;
+  struct proc *p = myproc();
+
+  if((new_proc = allocproc()) == 0) //process allocation
+    return -1;
+
+  new_proc->pgdir = p->pgdir;
+  new_proc->sz = p->sz;
+  new_proc->parent = p;
+  *new_proc->tf = *p->tf;  //copy process data to the new thread
+  
+  void * sarg1, *sarg2, *sret;
+
+  sret = stack + PGSIZE - 3 * sizeof(void *);
+  *(uint*)sret = 0xFFFFFFF; // push return address to stack
+
+  sarg1 = stack + PGSIZE - 2 * sizeof(void *);
+  *(uint*)sarg1  = (uint)arg1; 
+
+  sarg2 = stack + PGSIZE - 1 * sizeof(void *);
+  *(uint*)sarg2 = (uint)arg2;
+
+  new_proc->tf->esp = (uint) stack;
+  new_proc->threadstack = stack; 
+  new_proc->tf->esp += PGSIZE - 3 * sizeof(void*); // ret,arg1,arg2
+  new_proc->tf->ebp = new_proc->tf->esp; //set stack pointer to address
+  new_proc->tf->eip = (uint) fcn; //function ejra
+  new_proc->tf->eax = 0;
+
+  int i;
+  for(i = 0; i < NOFILE; i++)
+    if(p->ofile[i])
+      new_proc->ofile[i] = filedup(p->ofile[i]);
+  new_proc->cwd = idup(p->cwd);
+  
+  safestrcpy(new_proc->name, p->name, sizeof(p->name));
+
+  acquire(&ptable.lock);
+  new_proc->state = RUNNABLE;
+  release(&ptable.lock);
+
+  return new_proc->pid;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
