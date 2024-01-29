@@ -597,7 +597,7 @@ join(void** stack)
   for(;;)
   {
     kids = 0;
-    // & address mishe mire address akharin process yani 64+base_addr chon nproc 64 
+   
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) 
     {
 
