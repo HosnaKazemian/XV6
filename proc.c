@@ -557,8 +557,11 @@ clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
   sarg1 = stack + PGSIZE - 2 * sizeof(void *);
   *(uint*)sarg1  = (uint)arg1; 
 
-  sarg2 = stack + PGSIZE - 1 * sizeof(void *);
+  sarg2 = stack + PGSIZE - 1 * sizeof(void *);  
   *(uint*)sarg2 = (uint)arg2;
+  //arg2
+  //arg1
+  //0xfff
 
   new_proc->tf->esp = (uint) stack;
   new_proc->threadstack = stack; 
@@ -581,6 +584,59 @@ clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
 
   return new_proc->pid;
 }
+
+
+int
+join(void** stack)
+{
+  struct proc *p;
+  int kids, pid;
+  struct proc *procs = myproc();
+  acquire(&ptable.lock);
+  //check to see if any zombie childern
+  for(;;)
+  {
+    kids = 0;
+    // & address mishe mire address akharin process yani 64+base_addr chon nproc 64 
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) 
+    {
+
+      if(p->parent != procs || p->pgdir != p->parent->pgdir) // in shart || ezafe ke har bache na
+        continue;//check if a child thread
+        
+      kids = 1;
+      if(p->state == ZOMBIE)
+      {
+        pid = p->pid;
+        kfree(p->kstack);
+        p->kstack = 0;//remove zombie child thread from k_stack
+        // freevm(p->pgdir); // moshtarak
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+        stack = p->threadstack;
+        p->threadstack = 0; //reset thread in process table
+
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+    if(!kids || procs->killed)
+    {
+      //if no child then don't wait
+      release(&ptable.lock);
+      return -1;
+    }
+    sleep(procs, &ptable.lock); //if child wait to exit
+  }
+}
+
+
+
+
+
 
 
 

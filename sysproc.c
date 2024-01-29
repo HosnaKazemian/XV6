@@ -101,3 +101,14 @@ sys_clone(void)
   return clone((void *)func, (void *)arg1, (void *)arg2, (void *)stack);
 }
 
+
+int
+sys_join(void)
+{
+  void **stack;
+  int arg;
+
+  arg = argint(0, &arg);
+  stack = (void**) arg;
+  return join(stack);
+}
