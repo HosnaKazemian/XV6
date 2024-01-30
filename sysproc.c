@@ -95,7 +95,7 @@ sys_uptime(void)
 int
 sys_clone(void)
 {
-  cprintf("in sysproc.c clone\n");
+  // cprintf("in sysproc.c clone\n");
   int func, arg1, arg2, stack;
   if(argint(0, &func)<0 || argint(1, &arg1 )<0 || argint(2, &arg2)<0 || argint(3, &stack)<0)
     return -1;
@@ -118,7 +118,7 @@ sys_joins(void) {
 int
 sys_join(void)
 {
-  cprintf("in sysproc.c join\n");
+  // cprintf("in sysproc.c join\n");
   void **stack;
   int arg;
 

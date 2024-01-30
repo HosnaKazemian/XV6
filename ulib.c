@@ -111,7 +111,7 @@ memmove(void *vdst, const void *vsrc, int n)
 int 
 thread_create(void (*func)(void *, void *), void* arg1, void* arg2)
 { 
-    printf(1,"in ulib.c create\n");
+    // printf(1,"in ulib.c create\n");
     void* stack;
     stack = malloc(PGSIZE);
     return clone(func, arg1, arg2, stack);
@@ -125,10 +125,10 @@ thread_joins(int tid) {
 int 
 thread_join()
 { 
-  printf(1,"in ulib.c join\n");
+  // printf(1,"in ulib.c join\n");
   void* stackPtr;
   int x = join(&stackPtr);
-  printf(1," stack ptr is : %d\n",stackPtr );
+  // printf(1," stack ptr is : %d\n",stackPtr );
   return x;
 }
 

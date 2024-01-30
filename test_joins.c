@@ -2,18 +2,20 @@
 #include "user.h"
 
 void thread_func(void *arg1, void *arg2) {
-    sleep(1);
-    int *counter = (int*)arg1;
-    for (int i = 0; i < 10; i++) {
-        (*counter)++;
-        printf(1, "Counter in thread: %d\n", *counter);
-    }
+    //  sleep(1);
+    // int *counter = (int*)arg1;
+    // // printf(1,"in thread , tid %d\n",getpid());
+    // for (int i = 0; i < 1; i++) {
+    //     // printf(1, "-----Counter in thread: %d pid = -----\n", *counter,getpid());
+    //     (*counter)++;
+       
+    // }
     exit();
 }
 
 int main(int argc, char *argv[]) {
     int counter = 0;
-    printf(1, "Counter initially: %d\n", counter);
+    // printf(1, "-----------Counter initially: %d pid = --------------\n", counter,getpid());
 
    
     int pid = fork(); 
@@ -24,36 +26,32 @@ int main(int argc, char *argv[]) {
         exit();
     } else if (pid == 0) {
     
-        printf(1, "This is the child process with PID %d\n", getpid());
-        int tid = thread_create(thread_func, &counter, 0);
-        if(tid>0){
-            thread_joins(tid);
+        // printf(1, "child c%d\n", pid);
+        int tid1 = thread_create(thread_func, &counter, 0);
+        int tid2 = thread_create(thread_func, &counter, 0);
+        // printf(1,"tid %d\n", tid1);
+        if(tid1>0){
+            thread_joins(tid1);
+        }
+         if(tid2>0){
+            thread_joins(tid2);
         }
         printf(1, "Counter after thread: %d\n", counter);
         exit();
     
     } else {
-    
-        printf(1, "This is the parent process with PID %d, child PID %d\n", getpid(), pid);  
+        int alaki=0;
+        alaki++;
+        // alaki++;
+        // alaki++;
+        // printf(1, "parent p%d\n", pid);  
+        
         wait();
     }
    
     exit();
     
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -6,7 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-
+struct spinlock console_lock;
 
 struct {
   struct spinlock lock;
@@ -203,8 +203,7 @@ fork(void)
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
-  np->time_slice = 1;
-  np->time_slice_counter = 0;
+
 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
@@ -216,6 +215,8 @@ fork(void)
   pid = np->pid;
 
   acquire(&ptable.lock);
+  np->time_slice = 1;
+  np->time_slice_counter = 0;
 
   np->state = RUNNABLE;
 
@@ -351,6 +352,7 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      initlock(&console_lock, "console");
       if(p->state != RUNNABLE)
         continue;
 
@@ -362,7 +364,13 @@ scheduler(void)
 
       // if (p->is_thread && p->parent) {
       int thread_count = count_threads(p->parent);
-      if(thread_count>1){
+      // acquire(&console_lock);
+      // if(p->is_thread)
+      //   cprintf("thread count = %d\n", thread_count);
+      // release(&console_lock);
+
+    
+      if(p->is_thread==1){
         p->time_slice=thread_count+1;
       }
       else{
@@ -374,15 +382,38 @@ scheduler(void)
       //   p->time_slice = 1;
       // }
 
-      p->time_slice_counter++;
+      p->time_slice_counter+=1;
+     
       // if(p->is_thread==1){
-      //   cprintf(" we are in scheduler for a thread\n");
+      //   cprintf(" -we are in scheduler for a thread with tid of %d -\n ", p->pid);
       // }
-      // else{
-      //   cprintf(" we are in scheduler for a process\n");
+      // else if(p->pid>2){ // do taye aval baraye khodesh
+      //   cprintf(" -we are in scheduler for a process with pid of %d -\n " , p->pid);
       // }
-      // cprintf("time_slice_counter = %d and  , time_slice = %d\n " , p->time_slice_counter,p->time_slice);
+      // if(p->pid>2){
+      //   cprintf("-time_slice_counter = %d and  , time_slice = %d -\n " , p->time_slice_counter,p->time_slice);
+      //}
+     
       if(p -> time_slice_counter>= p->time_slice){
+       
+        // for fair share test
+        acquire(&console_lock);
+        if(p->pid>2){
+          cprintf(" chosen p is %d\n",p->pid);
+        if(p->is_thread){
+          cprintf(" ch it is a thread and its timeslice %d and tslice counter %d and tid %d\n",p->time_slice,p->time_slice_counter,p->pid);
+        }
+        }
+        //for fair share test
+         p->time_slice_counter=0;
+        // if(p->is_thread){
+          
+        //   cprintf("+t %d+",p->pid);
+        // }
+        // else{
+        //   cprintf("+p %d+" , p->pid);
+        // }
+        release(&console_lock);
         p->time_slice_counter=0;
         c->proc = p;
         switchuvm(p);
@@ -598,7 +629,7 @@ procdump(void)
 int 
 clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
 {
-  cprintf("in proc.c clone\n");
+  // cprintf("in proc.c clone\n");
   int i, pid;
   struct proc *np;
   struct proc *curproc = myproc();
@@ -632,9 +663,7 @@ clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
   np->tf->esp += PGSIZE - 3 * sizeof(void*); // ret,arg1,arg2
   np->tf->ebp = np->tf->esp; //set stack pointer to address
   np->tf->eip = (uint) fcn; //function ejra
-  np->is_thread=1;
-  np->time_slice = 1;
-  np->time_slice_counter = 0;
+ 
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -651,6 +680,9 @@ clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+  np->is_thread=1;
+  np->time_slice = 1;
+  np->time_slice_counter = 0;
 
   release(&ptable.lock);
 
@@ -691,6 +723,7 @@ join(void** stack)
         p->state = UNUSED;
         stack = p->threadstack;
         p->threadstack = 0; //reset thread in process table
+        p->is_thread=0;
 
         release(&ptable.lock);
         return pid;
@@ -735,6 +768,7 @@ joins(int tid)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+        p->is_thread=0;
         
         release(&ptable.lock);
         return pid;
