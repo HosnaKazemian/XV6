@@ -32,6 +32,7 @@ int sleep(int);
 int uptime(void);
 int clone(void (*start_routine)(void*,void*), void *, void *, void *);
 int join(void**);
+int joins(int);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -48,6 +49,7 @@ void free(void*);
 int atoi(const char*);
 int thread_create(void (*start_routine)(void *,void*), void * arg1, void * arg2);
 int thread_join(); 
+int thread_joins(int tid);
 int lock_init(lock_t *lk);
 void lock_acquire(lock_t *lk);
 void lock_release(lock_t *lk);

@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -538,6 +539,7 @@ procdump(void)
 int 
 clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
 {
+  cprintf("in proc.c clone\n");
   struct proc *new_proc;
   struct proc *p = myproc();
 
@@ -553,7 +555,7 @@ clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
 
   sret = stack + PGSIZE - 3 * sizeof(void *);
   *(uint*)sret = 0xFFFFFFF; // push return address to stack
-
+  //p->tf->ebp
   sarg1 = stack + PGSIZE - 2 * sizeof(void *);
   *(uint*)sarg1  = (uint)arg1; 
 
@@ -589,6 +591,7 @@ clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
 int
 join(void** stack)
 {
+  cprintf("in proc.c join\n");
   struct proc *p;
   int kids, pid;
   struct proc *procs = myproc();
@@ -630,13 +633,53 @@ join(void** stack)
       return -1;
     }
     sleep(procs, &ptable.lock); //if child wait to exit
+    cprintf(" the join is completed \n");
   }
 }
 
 
 
+int
+joins(int tid)
+{
+  struct proc *p;
+  int kids, pid;
+  struct proc *procs = myproc();
+  
+  acquire(&ptable.lock);
+  for(;;){
+    
+    kids = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->parent != procs || p->pgdir != procs->pgdir || p->pid != tid)
+        continue;
+      kids = 1;
+      if(p->state == ZOMBIE){
+        // Found one.
+        pid = p->pid;
+        kfree(p->kstack);
+        p->kstack = 0;
+        p-> threadstack = 0;
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+        
+        release(&ptable.lock);
+        return pid;
+      }
+    }
 
+    
+    if(!kids || procs->killed){
+      release(&ptable.lock);
+      return -1;
+    }
 
+    sleep(procs, &ptable.lock); 
+  }
+}
 
 
 

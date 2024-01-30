@@ -15,20 +15,11 @@ int main(int argc, char *argv[]) {
     int counter = 0;
     printf(1, "Counter initially: %d\n", counter);
 
-    thread_create(thread_func, &counter, 0);
-    thread_join();
+    int tid = thread_create(thread_func, &counter, 0);
+    if(tid>0){
+        thread_joins(tid);
+    }
 
     printf(1, "Counter after thread: %d\n", counter);
     exit();
 }
-    // if(tid==0){
-    //     printf(1,"hi i am the thread");
-    //     exit();
-    // }
-    // if(tid>0){
-    //     printf(1," hi i am the process itself");
-    //     thread_join();
-    // }
-   
-
-   

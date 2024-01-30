@@ -182,6 +182,7 @@ UPROGS=\
 	_zombie\
 	_test_threads\
 	_test_locks\
+	_test_joins\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -256,6 +257,7 @@ EXTRA=\
 	.gdbinit.tmpl gdbutil\
 	test_threads.c\
 	test_locks.c\
+	test_joins.c\
 
 dist:
 	rm -rf dist
