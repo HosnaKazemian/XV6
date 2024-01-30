@@ -40,6 +40,9 @@ struct proc {
   pde_t* pgdir;                // Page table
   char *kstack;                // Bottom of kernel stack for this process
   void *threadstack;           
+  int is_thread;
+  int time_slice;
+  int time_slice_counter;
   enum procstate state;        // Process state
   int pid;                     // Process ID
   struct proc *parent;         // Parent process

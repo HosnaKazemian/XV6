@@ -203,6 +203,8 @@ fork(void)
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
+  np->time_slice = 1;
+  np->time_slice_counter = 0;
 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
@@ -312,6 +314,21 @@ wait(void)
   }
 }
 
+
+int 
+count_threads(struct proc *parent) {
+  int count = 0;
+  struct proc *p;
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->parent == parent && p->is_thread)
+      count++;
+  }
+
+  return count;
+}
+
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -337,24 +354,66 @@ scheduler(void)
       if(p->state != RUNNABLE)
         continue;
 
+
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+      // int thread_count = (p->is_thread && p->parent) ? count_threads(p->parent) : 1;
 
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
+      // if (p->is_thread && p->parent) {
+      int thread_count = count_threads(p->parent);
+      if(thread_count>1){
+        p->time_slice=thread_count+1;
+      }
+      else{
+        p->time_slice=1;
+      }
+      // p->time_slice =  max(thread_count, 1);
+      // } 
+      // else {
+      //   p->time_slice = 1;
+      // }
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+      p->time_slice_counter++;
+      // if(p->is_thread==1){
+      //   cprintf(" we are in scheduler for a thread\n");
+      // }
+      // else{
+      //   cprintf(" we are in scheduler for a process\n");
+      // }
+      // cprintf("time_slice_counter = %d and  , time_slice = %d\n " , p->time_slice_counter,p->time_slice);
+      if(p -> time_slice_counter>= p->time_slice){
+        p->time_slice_counter=0;
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+
+      }
     }
     release(&ptable.lock);
 
   }
 }
+
+
+
+int 
+calculate_weight(struct proc *p) {
+  if (!p->is_thread) {
+    return 1; 
+  }
+  int thread_count = count_threads(p->parent);
+  return (thread_count > 0) ? thread_count : 1;
+}
+
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -573,6 +632,9 @@ clone(void(*fcn)(void*,void*), void *arg1, void *arg2, void* stack)
   np->tf->esp += PGSIZE - 3 * sizeof(void*); // ret,arg1,arg2
   np->tf->ebp = np->tf->esp; //set stack pointer to address
   np->tf->eip = (uint) fcn; //function ejra
+  np->is_thread=1;
+  np->time_slice = 1;
+  np->time_slice_counter = 0;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;

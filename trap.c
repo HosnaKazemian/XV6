@@ -14,6 +14,7 @@ extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
 
+
 void
 tvinit(void)
 {
@@ -36,6 +37,7 @@ idtinit(void)
 void
 trap(struct trapframe *tf)
 {
+  // cprintf("hi we are in trap.c");
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();
@@ -102,9 +104,11 @@ trap(struct trapframe *tf)
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
-  if(myproc() && myproc()->state == RUNNING &&
-     tf->trapno == T_IRQ0+IRQ_TIMER)
+  if(myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER){    // inja mire trapno ejra   trq0 base trq_timer shomare timer
+    // struct proc *p = myproc();
+    // p->time_slice_counter++;
     yield();
+  }
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
